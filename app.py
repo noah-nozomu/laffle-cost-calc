@@ -1,6 +1,35 @@
 import streamlit as st
 import pandas as pd
+# ==========================================
+# 👇 ここから追加：背景画像を設定する魔法のコード
+# ==========================================
+def set_bg_url(url):
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("{url}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        /* 文字が読みやすいように、メインエリアを少し半透明の白にする */
+        [data-testid="stHeader"] {{
+            background-color: rgba(0,0,0,0);
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
+# 自分の画像のURLに書き換えてください！
+# 例: "https://raw.githubusercontent.com/ユーザー名/リポジトリ名/main/bg.jpg"
+set_bg_url("ここにコピーしたURLを貼り付け") 
+
+# ==========================================
+# 👆 追加ここまで
+# ==========================================
 st.set_page_config(layout="wide")
 st.title('原価計算システム')
 
