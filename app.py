@@ -25,7 +25,7 @@ def set_bg_url(url):
 
 # 自分の画像のURLに書き換えてください！
 # 例: "https://raw.githubusercontent.com/ユーザー名/リポジトリ名/main/bg.jpg"
-set_bg_url("ここにコピーしたURLを貼り付け") 
+set_bg_url("blob:https://github.com/9ca282fe-4679-49eb-b3d3-aee22dec1246") 
 
 # ==========================================
 # 👆 追加ここまで
