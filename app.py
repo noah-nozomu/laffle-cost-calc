@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(layout="wide")
-st.title('Laffle 原価計算システム V4 🧇')
+st.title('原価計算システム')
 
 # -------------------------------------------
 # 1. データの準備（セッションステートで保存）
