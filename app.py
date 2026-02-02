@@ -1,9 +1,61 @@
 import streamlit as st
 import pandas as pd
+import base64  # 👈 これが必要です！画像変換用のライブラリ
+
+st.set_page_config(layout="wide")
 # ==========================================
-# 👇 ここから追加：背景画像を設定する魔法のコード
+# 👇 背景画像を自由に切り替える機能（完成版）
 # ==========================================
-def set_bg_url(url):
+
+# 1. 画像をCSSで使える形式(Base64)に変換する関数
+def get_base64_of_bin_file(bin_file):
+    data = bin_file.read()
+    return base64.b64encode(data).decode()
+
+# 2. CSSを適用する関数
+def set_bg(bg_image_file):
+    bin_str = get_base64_of_bin_file(bg_image_file)
+    # アップロードされた画像の形式(jpg/png)に合わせておまじないを変える
+    ext = "png" if bg_image_file.name.endswith(".png") else "jpg"
+    
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/{ext};base64,{bin_str}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        /* 文字を見やすくする設定（前回と同じ） */
+        .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label {{
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+        }}
+        [data-testid="stMetricValue"] {{
+            color: #ffff00 !important;
+            font-size: 3rem !important;
+            font-weight: 800 !important;
+            text-shadow: 3px 3px 5px rgba(0,0,0,1);
+        }}
+        [data-testid="stMetricLabel"] {{
+            color: #ffffff !important;
+            background-color: rgba(0,0,0,0.5);
+            padding: 5px;
+            border-radius: 5px;
+        }}
+        [data-testid="stHeader"] {{
+            background-color: rgba(0,0,0,0);
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# 3. デフォルト画像を設定する関数（アップロードがない時用）
+def set_default_bg(url):
     st.markdown(
         f"""
         <style>
@@ -14,7 +66,24 @@ def set_bg_url(url):
             background-repeat: no-repeat;
             background-attachment: fixed;
         }}
-        /* 文字が読みやすいように、メインエリアを少し半透明の白にする */
+        /* 文字設定などは上と同じ（省略せず書くことで適用漏れを防ぐ） */
+        .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label {{
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+        }}
+        [data-testid="stMetricValue"] {{
+            color: #ffff00 !important;
+            font-size: 3rem !important;
+            font-weight: 800 !important;
+            text-shadow: 3px 3px 5px rgba(0,0,0,1);
+        }}
+        [data-testid="stMetricLabel"] {{
+            color: #ffffff !important;
+            background-color: rgba(0,0,0,0.5);
+            padding: 5px;
+            border-radius: 5px;
+        }}
         [data-testid="stHeader"] {{
             background-color: rgba(0,0,0,0);
         }}
@@ -23,13 +92,26 @@ def set_bg_url(url):
         unsafe_allow_html=True
     )
 
-# 自分の画像のURLに書き換えてください！
-# 例: "https://raw.githubusercontent.com/ユーザー名/リポジトリ名/main/bg.jpg"
-set_bg_url("https://github.com/noah-nozomu/laffle-cost-calc/blob/main/pg.jpg.jpg?raw=true") 
+# ==========================================
+# 🎮 画面ロジック：どっちの画像を使うか決める
+# ==========================================
+
+# サイドバーにアップロードボタンを設置
+uploaded_bg = st.sidebar.file_uploader("🖼️ 背景画像をアップロード", type=['png', 'jpg', 'jpeg'])
+
+if uploaded_bg is not None:
+    # A. ユーザーが画像をアップロードした場合
+    set_bg(uploaded_bg)
+else:
+    # B. アップロードしていない場合（GitHubのデフォルト画像）
+    # ↓ここにさっきのURLを入れてください
+    default_url = "https://github.com/noah-nozomu/laffle-cost-calc/blob/main/pg.jpg.jpg?raw=true"
+    set_default_bg(default_url)
 
 # ==========================================
-# 👆 追加ここまで
-# ==========================================
+# 👆 ここまで
+# =========================================
+
 st.set_page_config(layout="wide")
 st.title('原価計算システム')
 
