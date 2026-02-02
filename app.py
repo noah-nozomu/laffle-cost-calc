@@ -1,23 +1,21 @@
 import streamlit as st
 import pandas as pd
-import base64  # 👈 これが必要です！画像変換用のライブラリ
+import base64 
 
+# 👇 設定は必ず一番最初に書く（これ以外は削除！）
 st.set_page_config(layout="wide")
+
 # ==========================================
-# 👇 背景画像を自由に切り替える機能（完成版）
+# 👇 背景画像を自由に切り替える機能
 # ==========================================
 
-# 1. 画像をCSSで使える形式(Base64)に変換する関数
 def get_base64_of_bin_file(bin_file):
     data = bin_file.read()
     return base64.b64encode(data).decode()
 
-# 2. CSSを適用する関数
 def set_bg(bg_image_file):
     bin_str = get_base64_of_bin_file(bg_image_file)
-    # アップロードされた画像の形式(jpg/png)に合わせておまじないを変える
     ext = "png" if bg_image_file.name.endswith(".png") else "jpg"
-    
     st.markdown(
         f"""
         <style>
@@ -28,7 +26,6 @@ def set_bg(bg_image_file):
             background-repeat: no-repeat;
             background-attachment: fixed;
         }}
-        /* 文字を見やすくする設定（前回と同じ） */
         .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label {{
             color: #ffffff !important;
             font-weight: 600 !important;
@@ -54,7 +51,6 @@ def set_bg(bg_image_file):
         unsafe_allow_html=True
     )
 
-# 3. デフォルト画像を設定する関数（アップロードがない時用）
 def set_default_bg(url):
     st.markdown(
         f"""
@@ -66,7 +62,6 @@ def set_default_bg(url):
             background-repeat: no-repeat;
             background-attachment: fixed;
         }}
-        /* 文字設定などは上と同じ（省略せず書くことで適用漏れを防ぐ） */
         .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label {{
             color: #ffffff !important;
             font-weight: 600 !important;
@@ -93,32 +88,25 @@ def set_default_bg(url):
     )
 
 # ==========================================
-# 🎮 画面ロジック：どっちの画像を使うか決める
+# 🎮 画面ロジック
 # ==========================================
 
-# サイドバーにアップロードボタンを設置
 uploaded_bg = st.sidebar.file_uploader("🖼️ 背景画像をアップロード", type=['png', 'jpg', 'jpeg'])
 
 if uploaded_bg is not None:
-    # A. ユーザーが画像をアップロードした場合
     set_bg(uploaded_bg)
 else:
-    # B. アップロードしていない場合（GitHubのデフォルト画像）
-    # ↓ここにさっきのURLを入れてください
+    # デフォルト画像のURL（GitHub）
     default_url = "https://github.com/noah-nozomu/laffle-cost-calc/blob/main/pg.jpg.jpg?raw=true"
     set_default_bg(default_url)
 
-# ==========================================
-# 👆 ここまで
-# =========================================
-
-st.set_page_config(layout="wide")
-st.title('原価計算システム')
 
 # -------------------------------------------
-# 1. データの準備（セッションステートで保存）
+# ここからメインアプリ
 # -------------------------------------------
-# 初回起動時のみ、初期データを読み込む
+st.title('Laffle 原価計算システム V5 🚀')
+
+# 1. データ準備
 if "master_df" not in st.session_state:
     default_data = [
         {"材料名": "米粉", "仕入れ値": 540, "単位量": 1000},
@@ -136,32 +124,25 @@ if "master_df" not in st.session_state:
     ]
     st.session_state.master_df = pd.DataFrame(default_data)
 
-# -------------------------------------------
-# 2. 仕入れ値の変更エリア（画面上部に配置）
-# -------------------------------------------
+# 2. マスタ管理エリア
 with st.expander("🛠️ 【マスタ管理】仕入れ値を変える・新しい材料を登録する", expanded=False):
     st.caption("下の一覧を直接書き換えてください。行を追加すると新しい材料になります。")
-    # 編集可能なデータフレーム
     edited_master = st.data_editor(
         st.session_state.master_df,
-        num_rows="dynamic", # 行の追加・削除を許可
+        num_rows="dynamic",
         key="editor"
     )
-    # 変更を保存
     st.session_state.master_df = edited_master
 
-# 計算用に辞書形式に変換（プログラムで扱いやすくする）
 MASTER_DICT = {}
 for index, row in st.session_state.master_df.iterrows():
-    if row["材料名"]: # 空行対策
+    if row["材料名"]:
         MASTER_DICT[row["材料名"]] = {
             "price": row["仕入れ値"],
             "unit": row["単位量"]
         }
 
-# -------------------------------------------
-# 3. レシピの構成エリア
-# -------------------------------------------
+# 3. レシピエリア
 st.divider()
 st.header("📝 レシピ・シミュレーション")
 
@@ -169,23 +150,17 @@ col_setup, col_calc = st.columns([1, 1])
 
 with col_setup:
     st.subheader("① 使う材料を選ぶ")
-    # ベースとなるレシピ（ここも本当はDB化できますが、一旦コードに書きます）
     base_recipes = {
         "プレーンワッフル": ["米粉", "コーンスターチ", "片栗粉", "三温糖", "ベーキングパウダー", "牛乳", "無糖ヨーグルト", "卵", "米油"],
         "チョコワッフル": ["米粉", "ココアパウダー", "コーンスターチ", "片栗粉", "三温糖", "ベーキングパウダー", "牛乳", "無糖ヨーグルト", "卵", "米油"],
         "カスタム（白紙）": []
     }
     
-    # テンプレート選択
     selected_template = st.selectbox("ベースにするレシピを選択", list(base_recipes.keys()))
     
-    # ★ここがポイント！使う材料を自由に抜き差しできる機能★
-    # マスタにある全材料を選択肢にする
     all_ingredients = list(MASTER_DICT.keys())
-    # テンプレートの材料を初期値にする
     default_ingredients = [img for img in base_recipes[selected_template] if img in all_ingredients]
     
-    # マルチセレクト（タグ選択）で材料を自由に追加・削除
     selected_ingredients = st.multiselect(
         "このレシピに使う材料（追加・削除できます）",
         options=all_ingredients,
@@ -194,31 +169,23 @@ with col_setup:
 
 with col_calc:
     st.subheader("② 分量を決める")
-    
     total_cost = 0
     details = []
 
     if not selected_ingredients:
         st.info("👈 左側で材料を選んでください")
     else:
-        # 選ばれた材料の分量入力欄をズラッと並べる
         for ing_name in selected_ingredients:
             data = MASTER_DICT[ing_name]
-            
-            # 1行に「入力欄」と「計算結果」を並べる
             c1, c2 = st.columns([2, 1])
-            
             with c1:
-                # 分量入力
                 amount = st.number_input(
                     f"{ing_name} (g または 個)", 
                     value=0.0, 
                     step=10.0, 
                     key=f"amount_{ing_name}"
                 )
-            
             with c2:
-                # 原価計算
                 unit_price = data["price"] / data["unit"]
                 cost = unit_price * amount
                 total_cost += cost
@@ -231,16 +198,10 @@ with col_calc:
                 "原価": int(cost)
             })
 
-# -------------------------------------------
-# 4. 結果発表エリア
-# -------------------------------------------
+# 4. 結果エリア
 st.divider()
 st.header(f"💰 合計原価: {int(total_cost):,} 円")
-
-# 30個で作った場合の1個あたり
 st.metric("1個あたりの原価 (30個製造時)", f"{int(total_cost / 30):,} 円")
 
-# おまけ：詳細テーブル表示
 with st.expander("詳細な内訳を見る"):
     st.dataframe(pd.DataFrame(details))
-    
